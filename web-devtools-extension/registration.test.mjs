@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+let registration;
+vm.runInNewContext(readFileSync(new URL('./client.js',import.meta.url),'utf8'),{window:{__ModuleLoader__:{load:x=>registration=x}}});
+const p=registration.factory(name=>{assert.equal(name,'react');return {Component:class{}}});
+const effects=[],slots=[];let definition;
+const locale={register:()=>()=>{},bind:()=>key=>({title:'Web 开发调试',desc:'独立的桌面内嵌网页与元素检查'}[key]||key)};
+p.apply({get:n=>n==='locale'?locale:{register:d=>{definition=d;return ()=>{}}},effect:f=>{const release=f();effects.push(release);return release;},slots:{inject:(n,f)=>{assert.equal(n,'sidebar.right.pane.tab');return f();},register:(o,c)=>{slots.push(o);assert.equal(typeof c,'function');return ()=>{};}}});
+assert.equal(definition.kind,'web-devtools-extension');assert.equal(typeof definition.guide[0].title,'function');assert.ok(definition.guide[0].title());assert.ok(definition.guide[0].description());assert.equal(slots.length,1);assert.equal(slots[0].key,definition.id);effects.reverse().forEach(f=>f());
+console.log('PASS: additive tab only, callable guide metadata, scoped disposers; no start-page override');

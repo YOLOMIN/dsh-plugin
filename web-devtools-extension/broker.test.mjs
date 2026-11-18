@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {BrowserBroker,validate} from './broker.js';
+const b=new BrowserBroker({deadline:40});
+const a=b.register('s1','window1');
+assert.throws(()=>b.register('s1','window2'),/Another/);
+assert.throws(()=>b.panel('s2',a.token),/valid/);
+assert.throws(()=>validate({action:'executeJavaScript'}),/Invalid/);
+assert.equal((await b.execute('s2',{action:'status'})).connected,false);
+const poll=b.poll('s1',a.token);
+const operation=b.execute('s1',{action:'inspect',selector:'h1'});
+const message=await poll;assert.equal(message.command.selector,'h1');
+assert.equal(b.panels.get('s1').pending.delivered,true);
+b.result('s1',a.token,message.command.id,{ok:true,value:{color:'test'}});
+assert.equal((await operation).color,'test');
+const q=b.execute('s1',{action:'snapshot'});b.unregister('s1',a.token);await assert.rejects(q,/Panel closed/);
+b.dispose();console.log('PASS: session lease isolation, one owner, request/reply, cancellation and action validation');

@@ -1,0 +1,3 @@
+- insert:
+    - id: web-devtools-extension
+      name: '@local/web-devtools-extension'
